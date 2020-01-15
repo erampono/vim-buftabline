@@ -2,17 +2,17 @@
 " Licence:     The MIT License (MIT)
 " Commit:      $Format:%H$
 " {{{ Copyright (c) 2015 Aristotle Pagaltzis <pagaltzis@gmx.de>
-" 
+"
 " Permission is hereby granted, free of charge, to any person obtaining a copy
 " of this software and associated documentation files (the "Software"), to deal
 " in the Software without restriction, including without limitation the rights
 " to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 " copies of the Software, and to permit persons to whom the Software is
 " furnished to do so, subject to the following conditions:
-" 
+"
 " The above copyright notice and this permission notice shall be included in
 " all copies or substantial portions of the Software.
-" 
+"
 " THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 " IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 " FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,6 +39,7 @@ let g:buftabline_indicators = get(g:, 'buftabline_indicators', 0)
 let g:buftabline_separators = get(g:, 'buftabline_separators', 0)
 let g:buftabline_show       = get(g:, 'buftabline_show',       2)
 let g:buftabline_plug_max   = get(g:, 'buftabline_plug_max',  10)
+let g:buftabline_show_path  = get(g:, 'buftabline_show_path',  0)
 
 function! buftabline#user_buffers() " help buffers are always unlisted, but quickfix buffers are not
 	return filter(range(1,bufnr('$')),'buflisted(v:val) && "quickfix" !=? getbufvar(v:val, "&buftype")')
@@ -69,37 +70,42 @@ function! buftabline#render()
 		let bufpath = bufname(bufnum)
 		if strlen(bufpath)
 			let tab.path = fnamemodify(bufpath, ':p:~:.')
-			let tab.sep = strridx(tab.path, s:dirsep, strlen(tab.path) - 2) " keep trailing dirsep
+			let tab.sep = strridx(tab.path, '/') " keep trailing dirsep
 			let tab.label = tab.path[tab.sep + 1:]
 			let pre = ( show_mod && getbufvar(bufnum, '&mod') ? '+' : '' ) . screen_num
-			let tab.pre = strlen(pre) ? pre . ' ' : ''
+			let tab.pre = strlen(pre) ? pre . '. ' : ''
 			let tabs_per_tail[tab.label] = get(tabs_per_tail, tab.label, 0) + 1
 			let path_tabs += [tab]
 		elseif -1 < index(['nofile','acwrite'], getbufvar(bufnum, '&buftype')) " scratch buffer
 			let tab.label = ( show_mod ? '!' . screen_num : screen_num ? screen_num . ' !' : '!' )
 		else " unnamed file
 			let tab.label = ( show_mod && getbufvar(bufnum, '&mod') ? '+' : '' )
-			\             . ( screen_num ? screen_num : '*' )
+			\ . ( screen_num ? screen_num : '*' )
 		endif
 		let tabs += [tab]
 	endfor
 
+
+	let show_path = g:buftabline_show_path == 1
 	" disambiguate same-basename files by adding trailing path segments
-	while len(filter(tabs_per_tail, 'v:val > 1'))
-		let [ambiguous, tabs_per_tail] = [tabs_per_tail, {}]
-		for tab in path_tabs
-			if -1 < tab.sep && has_key(ambiguous, tab.label)
-				let tab.sep = strridx(tab.path, s:dirsep, tab.sep - 1)
-				let tab.label = tab.path[tab.sep + 1:]
-			endif
-			let tabs_per_tail[tab.label] = get(tabs_per_tail, tab.label, 0) + 1
-		endfor
-	endwhile
+        if show_path
+            while len(filter(tabs_per_tail, 'v:val > 1'))
+                    let [ambiguous, tabs_per_tail] = [tabs_per_tail, {}]
+                    for tab in path_tabs
+                            if -1 < tab.sep && has_key(ambiguous, tab.label)
+                                    let tab.sep = strridx(tab.path, s:dirsep, tab.sep - 1)
+                                    let tab.label = tab.path[tab.sep + 1:]
+                            endif
+                            let tabs_per_tail[tab.label] = get(tabs_per_tail, tab.label, 0) + 1
+                    endfor
+            endwhile
+        endif
+
 
 	" now keep the current buffer center-screen as much as possible:
 
 	" 1. setup
-	let lft = { 'lasttab':  0, 'cut':  '.', 'indicator': '<', 'width': 0, 'half': &columns / 2 }
+	let lft = { 'lasttab':  0, 'cut':  '.', 'indicator': ' ', 'width': 0, 'half': &columns / 2 }
 	let rgt = { 'lasttab': -1, 'cut': '.$', 'indicator': '>', 'width': 0, 'half': &columns - lft.half }
 
 	" 2. sum the string lengths for the left and right halves
