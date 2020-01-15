@@ -105,7 +105,7 @@ function! buftabline#render()
 	" now keep the current buffer center-screen as much as possible:
 
 	" 1. setup
-	let lft = { 'lasttab':  0, 'cut':  '.', 'indicator': ' ', 'width': 0, 'half': &columns / 2 }
+	let lft = { 'lasttab':  0, 'cut':  '.', 'indicator': '    >', 'width': 5, 'half': &columns / 2 }
 	let rgt = { 'lasttab': -1, 'cut': '.$', 'indicator': '>', 'width': 0, 'half': &columns - lft.half }
 
 	" 2. sum the string lengths for the left and right halves
